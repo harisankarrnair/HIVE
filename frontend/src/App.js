@@ -1,26 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Sun, Moon, User, Menu, X, ArrowLeft, ArrowRight, Home, FileText, Droplets, Utensils, Award, ShieldAlert, LogOut, Edit3, Save, XCircle, Clock, CheckCircle, Loader, Bell, Megaphone, ChevronDown, ShoppingCart } from 'lucide-react';
-
-// --- MOCK DATA ---
-const MOCK_USER = {
-  name: 'Jack',
-  email: 'jack2022@vitstudent.ac.in',
-  regNo: '22BCE1722',
-  room: 'A-303',
-  block: 'Men\'s Hostel - I',
-};
-
-const MOCK_COMPLAINTS = [
-  { id: 'C-101', category: 'Internet', description: 'Wi-Fi speed is very slow in my room.', status: 'Resolved', date: '2025-07-25' },
-  { id: 'C-102', category: 'Electrical', description: 'The fan is making a loud noise.', status: 'In Progress', date: '2025-07-28' },
-  { id: 'C-103', category: 'Plumbing', description: 'Leaky tap in the washroom.', status: 'Pending', date: '2025-07-30' },
-];
-
-const MOCK_EVENT_REGISTRATIONS = [
-    { id: 'S-01', name: 'Inter-Block Cricket Tournament', date: '2025-08-10', time: '9:00 AM', venue: 'Main Ground', registered: true },
-    { id: 'S-02', name: 'Chess Competition', date: '2025-08-12', time: '2:00 PM', venue: 'Common Room, Block II', registered: false },
-    { id: 'S-03', name: 'Volleyball Friendly Match', date: '2025-08-15', time: '5:00 PM', venue: 'Volleyball Court', registered: false },
-];
+import { Sun, Moon, User, Menu, X, ArrowLeft, ArrowRight, Home, FileText, Droplets, Utensils, Award, ShieldAlert, LogOut, Edit3, Save, XCircle, Clock, CheckCircle, Loader, Bell, Megaphone, ChevronDown, ShoppingCart, Eye, EyeOff } from 'lucide-react';
+// --- API CONFIGURATION ---
+const API_BASE_URL = 'http://localhost:5000/api'; 
 
 const INITIAL_SPORTS_AVAILABILITY = [
     { id: 'football', name: 'Football Ground', status: 'Open', timings: '6 AM - 9 PM', current: 18, max: 40, userCheckedIn: false },
@@ -39,17 +20,8 @@ const INITIAL_MESS_CROWD = {
     'fusion': { id: 'fusion', name: 'Fusion', current: 45, max: 120, userCheckedIn: false },
 };
 
-const MOCK_LAUNDRY_STATUS = {
-    'TKN101': { status: 'Ready for Pickup', details: 'Your clothes have been washed and ironed.' },
-    'TKN234': { status: 'In Progress', details: 'Your clothes are currently being washed.' },
-};
 
-const INITIAL_VMART_STOCK = [
-    { category: 'Snacks', items: [ { id: 'snk1', name: 'Lays Classic', count: 15 }, { id: 'snk2', name: 'Kurkure', count: 22 }, { id: 'snk3', name: 'Good Day Cookies', count: 0 } ] },
-    { category: 'Beverages', items: [ { id: 'bev1', name: 'Coke (500ml)', count: 30 }, { id: 'bev2', name: 'Red Bull', count: 8 }, { id: 'bev3', name: 'Tropicana Juice', count: 12 } ] },
-    { category: 'Cosmetics', items: [ { id: 'cos1', name: 'Nivea Facewash', count: 7 }, { id: 'cos2', name: 'Parachute Hair Oil', count: 0 }, { id: 'cos3', name: 'Dove Soap', count: 18 } ] },
-    { category: 'Stationery', items: [ { id: 'stn1', name: 'Classmate Notebook', count: 25 }, { id: 'stn2', name: 'Pen (Blue)', count: 40 } ] },
-];
+
 
 const INITIAL_NOTIFICATIONS = [
     { id: 1, type: 'event', title: 'Cricket Tournament Reminder', body: 'Your match starts tomorrow at 9:00 AM.', read: false, time: '1h ago' },
@@ -57,30 +29,187 @@ const INITIAL_NOTIFICATIONS = [
     { id: 3, type: 'complaint', title: 'Complaint Resolved', body: 'Your complaint C-101 regarding slow Wi-Fi has been resolved.', read: true, time: '1d ago' },
 ];
 
-const MOCK_ANNOUNCEMENTS = [
-    { id: 1, title: 'Hostel Registration for Next Semester', date: '2025-07-30', body: 'The portal for hostel registration will be open from August 5th to August 10th. Please ensure you complete the process within the given timeframe. The registration link is: <a href="https://vtopcc.vit.ac.in/vtop/open/page" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:underline">vtop.vit.ac.in/hostelreg</a>' },
-    { id: 2, title: 'Scheduled Power Outage', date: '2025-07-28', body: 'Please be advised that there will be a scheduled power outage for maintenance in all blocks on August 2nd from 10:00 AM to 2:00 PM. We apologize for the inconvenience.' },
-];
-
 
 // --- CONTEXT ---
 const AppContext = createContext();
 
+// --- API FETCH FUNCTIONS ---
+
+const loginUser = async (email, password) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.msg || 'Login failed');
+        }
+
+        const userData = await response.json();
+        return userData;
+    } catch (error) {
+        console.error('API Login Error:', error);
+        throw error;
+    }
+};
+
+const registerUser = async (userData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.msg || 'Registration failed');
+        }
+
+        const newUser = await response.json();
+        return newUser;
+    } catch (error) {
+        console.error('API Registration Error:', error);
+        throw error;
+    }
+};
+// --- API FETCH FUNCTIONS (In App.js) ---
+
+// 🚩 MODIFIED: fetchComplaints now requires a userId
+const fetchComplaints = async (userId) => {
+    if (!userId) {
+        console.error('Error: Cannot fetch complaints without a User ID.');
+        return [];
+    }
+    try {
+        // Append the userId to the URL query string
+        const response = await fetch(`${API_BASE_URL}/complaints?userId=${userId}`); 
+        if (!response.ok) throw new Error('Failed to fetch complaints');
+        const data = await response.json();
+        return data.map((c, index) => ({
+            id: c._id || `C-${index + 1}`,
+            category: c.category,
+            description: c.description,
+            status: c.status,
+            date: new Date(c.date).toISOString().split('T')[0],
+        })).sort((a, b) => new Date(b.date) - new Date(a.date)); 
+    } catch (error) {
+        console.error('Error fetching complaints:', error);
+        return []; 
+    }
+};
+
+// 🚩 MODIFIED: submitComplaint now requires a userId
+const submitComplaint = async (complaintData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/complaints`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(complaintData), // complaintData must include userId
+        });
+        if (!response.ok) throw new Error('Failed to submit complaint');
+        const newComplaint = await response.json();
+        return {
+            id: newComplaint._id,
+            category: newComplaint.category,
+            description: newComplaint.description,
+            status: newComplaint.status,
+            date: new Date(newComplaint.date).toISOString().split('T')[0],
+        };
+    } catch (error) {
+        console.error('Error submitting complaint:', error);
+        throw error;
+    }
+};
+const updateUserInDB = async (userId, updateData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.msg || 'Failed to save profile changes');
+        }
+
+        return await response.json(); // Returns the updated user object
+    } catch (error) {
+        console.error('API Profile Update Error:', error);
+        throw error;
+    }
+};
+// --- API FETCH FUNCTIONS (In App.js) ---
+
+const fetchAnnouncements = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/events`);
+        if (!response.ok) throw new Error('Failed to fetch announcements');
+        const data = await response.json();
+        return data.map(e => ({
+            id: e._id,
+            title: e.title,
+            // 🚩 MODIFIED: Capture all new fields
+            description: e.description, // Keep description separate
+            date: e.date, 
+            time: e.time, 
+            venue: e.venue, 
+            organizer: e.organizer
+        })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    } catch (error) {
+        console.error('Error fetching announcements:', error);
+        return [];
+    }
+};
+
+const fetchNotifications = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/notifications`);
+        if (!response.ok) throw new Error('Failed to fetch notifications');
+        const data = await response.json();
+        return data.map((n, index) => ({
+             id: n._id || index, 
+             type: 'general',
+             title: n.title, 
+             body: n.message, 
+             read: false,
+             time: `${Math.floor((Date.now() - new Date(n.createdAt).getTime()) / 3600000)}h ago`
+        }));
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        return INITIAL_NOTIFICATIONS;
+    }
+};
+
+
 // --- MAIN APP COMPONENT ---
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [page, setPage] = useState('login');
-  const [history, setHistory] = useState(['login']);
+  // 🚩 CHANGE: Initial page is 'welcome'
+  const [page, setPage] = useState('welcome');
+  const [history, setHistory] = useState(['welcome']);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAlertActive, setIsAlertActive] = useState(false);
-  const [userData, setUserData] = useState(MOCK_USER);
+  
+  
+  const [userData, setUserData] = useState(null); 
   const [sportsAvailability, setSportsAvailability] = useState(INITIAL_SPORTS_AVAILABILITY);
   const [messCrowd, setMessCrowd] = useState(INITIAL_MESS_CROWD);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]); 
+  const [announcements, setAnnouncements] = useState([]); 
+  const [sportsEvents, setSportsEvents] = useState([]); 
+  const [vmartStock, setVmartStock] = useState([]);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
+  
+  
 
   useEffect(() => {
     document.body.className = isDarkMode ? 'dark bg-gray-900' : 'light bg-gray-100';
@@ -94,6 +223,59 @@ export default function App() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileMenuOpen, isNotificationsOpen]);
+  
+  useEffect(() => {
+    if (isLoggedIn && userData) {
+        const loadInitialData = async () => {
+            setIsLoadingInitialData(true);
+            try {
+                const fetchedNotifications = await fetchNotifications();
+                setNotifications(fetchedNotifications);
+
+                const fetchedAnnouncements = await fetchAnnouncements();
+                setAnnouncements(fetchedAnnouncements);
+                const fetchedEvents = await fetchSportsEvents();
+                setSportsEvents(fetchedEvents); // Set the fetched events state
+
+                const fetchedVmartStock = await fetchVmartStock();
+                setVmartStock(fetchedVmartStock);
+                
+            } catch (error) {
+                console.error("Error loading initial data:", error);
+            } finally {
+                setIsLoadingInitialData(false);
+            }
+        };
+        loadInitialData();
+    }
+  }, [isLoggedIn, userData]);
+
+  
+
+  // --- API Handlers ---
+  const handleAppLogin = async (email, password) => { 
+    try {
+        const user = await loginUser(email, password); 
+        setUserData(user); 
+        setIsLoggedIn(true); 
+        navigate('dashboard'); 
+    } catch (error) {
+        alert("Login Failed: " + error.message);
+    }
+  };
+
+  const handleAppRegistration = async (formData) => {
+    try {
+        const newUser = await registerUser(formData);
+        // Assuming successful registration logs the user in
+        setUserData(newUser);
+        setIsLoggedIn(true);
+        navigate('dashboard');
+        alert("Registration Successful!");
+    } catch (error) {
+        alert("Registration Failed: " + error.message);
+    }
+  };
 
 
   const navigate = (newPage) => {
@@ -112,8 +294,7 @@ export default function App() {
 
   const goBack = () => { if (historyIndex > 0) { setHistoryIndex(historyIndex - 1); setPage(history[historyIndex - 1]); } };
   const goForward = () => { if (historyIndex < history.length - 1) { setHistoryIndex(historyIndex + 1); setPage(history[historyIndex + 1]); } };
-  const handleLogin = () => { setIsLoggedIn(true); navigate('dashboard'); };
-  const handleLogout = () => { setIsLoggedIn(false); setHistory(['login']); setHistoryIndex(0); setPage('login'); setIsProfileMenuOpen(false); setIsAlertActive(false); };
+  const handleLogout = () => { setIsLoggedIn(false); setHistory(['welcome']); setHistoryIndex(0); setPage('welcome'); setIsProfileMenuOpen(false); setIsAlertActive(false); setUserData(null); }; // 🚩 CHANGE: Redirect to 'welcome'
 
   const addNotification = (newNotification) => {
     setNotifications(prev => [{...newNotification, id: Date.now(), read: false, time: 'Just now'}, ...prev]);
@@ -123,18 +304,27 @@ export default function App() {
     navigate, isDarkMode, setIsDarkMode, isSidebarOpen, setIsSidebarOpen, user: userData, updateUser: setUserData, handleLogout,
     isProfileMenuOpen, setIsProfileMenuOpen, isAlertActive, setIsAlertActive, sportsAvailability, setSportsAvailability,
     messCrowd, setMessCrowd, notifications, setNotifications, addNotification, isNotificationsOpen, setIsNotificationsOpen,
+    announcements,sportsEvents,setSportsEvents,vmartStock,
+    handleAppLogin, // Pass login handler
+    handleAppRegistration, // Pass registration handler
   };
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
-        {!isLoggedIn ? <LoginPage onLogin={handleLogin} /> : (
+        {!isLoggedIn ? <PageContent currentPage={page} isAuthPage={true} /> : ( // 🚩 CHANGE: Show PageContent for auth pages
           <div className="flex h-screen overflow-hidden">
             <Sidebar />
             <div className="flex-1 flex flex-col">
               <Header goBack={goBack} goForward={goForward} canGoBack={historyIndex > 0} canGoForward={historyIndex < history.length - 1} />
               <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-gray-100 dark:bg-gray-900">
-                <PageContent currentPage={page} />
+                {isLoadingInitialData && page === 'dashboard' ? (
+                    <div className="flex items-center justify-center h-full min-h-[50vh] text-gray-500 dark:text-gray-400">
+                        <Loader className="animate-spin mr-3"/> Loading Dashboard...
+                    </div>
+                ) : (
+                    <PageContent currentPage={page} />
+                )}
               </main>
             </div>
           </div>
@@ -276,10 +466,54 @@ const NotificationsDropdown = () => {
     );
 };
 
-
+// Helper component for form inputs (DEFINED ONCE, EXTERNALLY)
+const FormInput = ({ label, type, value, onChange, required, name, showPassword, setShowPassword }) => (
+    <div>
+        <label htmlFor={name} className="text-sm font-bold text-gray-600 dark:text-gray-300 block">
+            {label}
+        </label>
+        {name === 'password' ? (
+            <div className="relative">
+                <input
+                    // The input type logic remains standard: if showPassword is true, show text.
+                    type={showPassword ? 'text' : 'password'} 
+                    id={name}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full p-3 mt-1 text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-md pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required={required}
+                />
+                <button
+                    type="button" 
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                    {/* 🚩 FIX: ICON LOGIC INVERTED 🚩
+                       If showPassword is TRUE (password is visible), show the EyeOff (closed) icon,
+                       representing the action to hide it.
+                    */}
+                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />} 
+                </button>
+            </div>
+        ) : (
+            <input
+                type={type}
+                id={name}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full p-3 mt-1 text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required={required}
+            />
+        )}
+    </div>
+);
 // --- PAGE ROUTING ---
 const PageContent = ({ currentPage }) => {
   switch (currentPage) {
+    // 🚩 CHANGE: Add 'welcome' and route 'login' to the combined auth page
+    case 'welcome': return <WelcomePage />;
+    case 'login': return <LoginPage mode="login" />;
+    case 'register': return <LoginPage mode="register" />;
     case 'dashboard': return <DashboardPage />;
     case 'profile': return <ProfilePage />;
     case 'complaints': return <ComplaintPage />;
@@ -294,59 +528,206 @@ const PageContent = ({ currentPage }) => {
 
 // --- PAGES ---
 
-const LoginPage = ({ onLogin }) => {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">HIVE</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Hostel Integrated Virtual Environment</p>
+// 🚩 NEW COMPONENT: Welcome Page
+const WelcomePage = () => {
+    const { navigate } = useContext(AppContext);
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+            <div className="w-full max-w-lg p-10 space-y-10 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl text-center">
+                <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">HIVE</h1>
+                <p className="text-xl text-gray-600 dark:text-gray-400">Hostel Integrated Virtual Environment</p>
+                <div className="flex flex-col space-y-4">
+                    <button onClick={() => navigate('login')} className="w-full py-4 text-lg font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-transform transform hover:scale-[1.02]">
+                        Login 
+                    </button>
+                    <button onClick={() => navigate('register')} className="w-full py-4 text-lg font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-transform transform hover:scale-[1.02]">
+                        Register 
+                    </button>
+                </div>
+            </div>
         </div>
-        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
-          <div>
-            <label htmlFor="email" className="text-sm font-bold text-gray-600 dark:text-gray-300 block">
-              University Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              defaultValue="student@vitstudent.ac.in"
-              className="w-full p-3 mt-1 text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="text-sm font-bold text-gray-600 dark:text-gray-300 block"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              defaultValue="password"
-              className="w-full p-3 mt-1 text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full py-3 font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transform hover:scale-105 transition-transform duration-200"
-            >
-              Login
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+    );
 };
+
+// MODIFIED COMPONENT: LoginPage now handles both Login and Register
+const LoginPage = ({ mode }) => {
+    const { handleAppLogin, handleAppRegistration, navigate } = useContext(AppContext);
+    
+    // State definitions
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const [regNo, setRegNo] = useState('');
+    const [room, setRoom] = useState('');
+    const [block, setBlock] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // 🚩 CRITICAL STATE FOR PASSWORD TOGGLE
+    const [showPassword, setShowPassword] = useState(false); 
+
+    const isRegister = mode === 'register';
+
+    const handleSubmit = async (e) => { 
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            if (isRegister) {
+                const formData = { name, email, regNo, room, block, password };
+                await handleAppRegistration(formData);
+            } else {
+                await handleAppLogin(email, password);
+            }
+        } catch (error) {
+            // Error handling is inside handleAppLogin/handleAppRegistration
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+            <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-transform duration-300">
+                <div className="text-center">
+                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">{isRegister ? 'Register' : 'Login'} to HIVE</h1>
+                    <p className="mt-2 text-gray-600 dark:text-gray-400">
+                        {isRegister ? 'Create your new hostel account' : 'Access your virtual environment'}
+                    </p>
+                </div>
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                    {isRegister && (
+                        <>
+                            <FormInput label="Full Name" type="text" value={name} onChange={setName} required={true} name="name" />
+                            <FormInput label="Registration No." type="text" value={regNo} onChange={setRegNo} required={true} name="regNo" />
+                            <FormInput label="Room No. (e.g., A-303)" type="text" value={room} onChange={setRoom} required={true} name="room" />
+                            <FormInput label="Block" type="text" value={block} onChange={setBlock} required={true} name="block" />
+                        </>
+                    )}
+                    <FormInput label="University Email" type="email" value={email} onChange={setEmail} required={true} name="email" />
+                    
+                    {/* CRITICAL CALL: Pass the password state and setter */}
+                    <FormInput 
+                        label="Password" 
+                        type="password" 
+                        value={password} 
+                        onChange={setPassword} 
+                        required={true} 
+                        name="password" 
+                        showPassword={showPassword}        
+                        setShowPassword={setShowPassword}  
+                    />
+                    
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full py-3 font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-transform duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                        >
+                            {isSubmitting ? <Loader className="animate-spin h-5 w-5" /> : (isRegister ? 'Register' : 'Login')}
+                        </button>
+                    </div>
+                </form>
+                <div className="text-center text-sm">
+                    <button onClick={() => navigate(isRegister ? 'login' : 'register')} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                        {isRegister ? 'Already have an account? Login' : 'Need an account? Register here'}
+                    </button>
+                    <button onClick={() => navigate('welcome')} className="block mt-2 text-gray-500 dark:text-gray-500 hover:underline">
+                        Back to Welcome
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+
+   // Helper component for form inputs (DEFINED ONCE, OUTSIDE)
+ const FormInput = ({ label, type, value, onChange, required, name, showPassword, setShowPassword }) => (
+    <div>
+        <label htmlFor={name} className="text-sm font-bold text-gray-600 dark:text-gray-300 block">
+            {label}
+        </label>
+        {name === 'password' ? (
+            <div className="relative">
+                <input
+                    type={showPassword ? 'text' : 'password'} 
+                    id={name}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full p-3 mt-1 text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-md pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required={required}
+                />
+                <button
+                    type="button" 
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+            </div>
+        ) : (
+            <input
+                type={type}
+                id={name}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full p-3 mt-1 text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required={required}
+            />
+        )}
+    </div>
+);
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+            <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-transform duration-300">
+                <div className="text-center">
+                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">{isRegister ? 'Register' : 'Login'} to HIVE</h1>
+                    <p className="mt-2 text-gray-600 dark:text-gray-400">
+                        {isRegister ? 'Create your new hostel account' : 'Access your virtual environment'}
+                    </p>
+                </div>
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                    {isRegister && (
+                        <>
+                            <FormInput label="Full Name" type="text" value={name} onChange={setName} required={true} name="name" />
+                            <FormInput label="Registration No." type="text" value={regNo} onChange={setRegNo} required={true} name="regNo" />
+                            <FormInput label="Room No. (e.g., A-303)" type="text" value={room} onChange={setRoom} required={true} name="room" />
+                            <FormInput label="Block" type="text" value={block} onChange={setBlock} required={true} name="block" />
+                        </>
+                    )}
+                    <FormInput label="University Email" type="email" value={email} onChange={setEmail} required={true} name="email" />
+                    
+                    {/* 🚩 Usage of the new FormInput logic for password */}
+                    <FormInput label="Password" type="password" value={password} onChange={setPassword} required={true} name="password" showPassword={showPassword} setShowPassword={setShowPassword} />
+                    
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full py-3 font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-transform duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                        >
+                            {isSubmitting ? <Loader className="animate-spin h-5 w-5" /> : (isRegister ? 'Register' : 'Login')}
+                        </button>
+                    </div>
+                </form>
+                <div className="text-center text-sm">
+                    <button onClick={() => navigate(isRegister ? 'login' : 'register')} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                        {isRegister ? 'Already have an account? Login' : 'Need an account? Register here'}
+                    </button>
+                    <button onClick={() => navigate('welcome')} className="block mt-2 text-gray-500 dark:text-gray-500 hover:underline">
+                        Back to Welcome
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const DashboardPage = () => {
     const { navigate, user, isAlertActive } = useContext(AppContext);
+    
     const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+
+    if (!user) return <div className="text-center p-10"><Loader className="animate-spin mx-auto"/> Loading User Data...</div>;
 
     const menuItems = [
         { name: 'File a Complaint', icon: FileText, page: 'complaints', color: 'blue' },
@@ -404,26 +785,59 @@ const DashboardPage = () => {
         </div>
     );
 };
+const ProfileField = ({ label, value, name, isEditing, handleInputChange }) => (
+    <div>
+        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</dt>
+        {isEditing ? (
+            // Note: The handleInputChange prop must be passed correctly
+            <input type="text" name={name} value={value || ''} onChange={handleInputChange} className="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        ) : ( <dd className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{value}</dd> )}
+    </div>
+);
 
 const ProfilePage = () => {
     const { user, updateUser } = useContext(AppContext);
+    
+    // ... existing hooks ...
     const [isEditMode, setIsEditMode] = useState(false);
     const [formData, setFormData] = useState(user);
+    const [isSaving, setIsSaving] = useState(false); // New state for loading indicator
 
-    useEffect(() => { setFormData(user); }, [user]);
+    useEffect(() => { 
+        setFormData(user); 
+    }, [user]);
+
+    if (!user) return <div className="text-center p-10"><Loader className="animate-spin mx-auto"/> Loading Profile...</div>;
 
     const handleInputChange = (e) => { setFormData(prev => ({ ...prev, [e.target.name]: e.target.value })); };
-    const handleSave = () => { updateUser(formData); setIsEditMode(false); };
+    
+    // 🚩 MODIFIED: Asynchronous handleSave function
+    const handleSave = async () => { 
+        setIsSaving(true);
+        try {
+            // Get only the fields allowed for update
+            const updatePayload = {
+                name: formData.name,
+                regNo: formData.regNo,
+                room: formData.room,
+                block: formData.block,
+            };
+
+            const updatedUser = await updateUserInDB(user._id, updatePayload);
+            
+            // Update the global user context with the data returned from the server
+            updateUser(updatedUser); 
+            setIsEditMode(false);
+            alert("Profile saved successfully!");
+
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        } finally {
+            setIsSaving(false);
+        }
+    };
     const handleCancel = () => { setFormData(user); setIsEditMode(false); };
 
-    const ProfileField = ({ label, value, name, isEditing }) => (
-        <div>
-            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</dt>
-            {isEditing ? (
-                <input type="text" name={name} value={value} onChange={handleInputChange} className="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            ) : ( <dd className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{value}</dd> )}
-        </div>
-    );
     
     return (
         <div className="max-w-4xl mx-auto">
@@ -445,17 +859,36 @@ const ProfilePage = () => {
                     </div>
                     <div className="text-center md:text-left flex-1">
                         {isEditMode ? (
-                            <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-indigo-500 focus:outline-none w-full" />
+                            <input type="text" name="name" value={formData.name || ''} onChange={handleInputChange} className="text-3xl font-bold text-gray-900 dark:text-white bg-transparent border-b-2 border-indigo-500 focus:outline-none w-full" />
                         ) : ( <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{formData.name}</h2> )}
                         <p className="text-indigo-500 dark:text-indigo-400 text-lg">{formData.email}</p>
                     </div>
                 </div>
                 <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
                     <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
-                        <ProfileField label="Registration No." value={formData.regNo} name="regNo" isEditing={isEditMode} />
-                        <ProfileField label="Block" value={formData.block} name="block" isEditing={isEditMode} />
-                        <ProfileField label="Room No." value={formData.room} name="room" isEditing={isEditMode} />
-                    </dl>
+                    {/* 🚩 UPDATED CALLS: Pass handleInputChange as a prop */}
+                    <ProfileField 
+                        label="Registration No." 
+                        value={formData.regNo} 
+                        name="regNo" 
+                        isEditing={isEditMode}
+                        handleInputChange={handleInputChange} // <-- Pass handler
+                    />
+                    <ProfileField 
+                        label="Block" 
+                        value={formData.block} 
+                        name="block" 
+                        isEditing={isEditMode} 
+                        handleInputChange={handleInputChange} // <-- Pass handler
+                    />
+                    <ProfileField 
+                        label="Room No." 
+                        value={formData.room} 
+                        name="room" 
+                        isEditing={isEditMode} 
+                        handleInputChange={handleInputChange} // <-- Pass handler
+                    />
+                </dl>
                 </div>
                 {isEditMode && (
                     <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
@@ -473,10 +906,29 @@ const ProfilePage = () => {
         </div>
     );
 };
+// --- ComplaintPage (in App.js) ---
 
 const ComplaintPage = () => {
-    const [complaints, setComplaints] = useState(MOCK_COMPLAINTS);
+    const { user } = useContext(AppContext);
+    const [complaints, setComplaints] = useState([]);
     const [showForm, setShowForm] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const loadComplaints = async () => {
+            if (!user || !user._id) {
+                setIsLoading(false);
+                console.error("User not fully loaded, skipping complaint fetch.");
+                return;
+            }
+            setIsLoading(true);
+            const fetchedComplaints = await fetchComplaints(user._id); 
+            setComplaints(fetchedComplaints);
+            setIsLoading(false);
+        };
+        loadComplaints();
+    }, [user]); 
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -487,21 +939,32 @@ const ComplaintPage = () => {
         }
     };
     
-    const handleNewComplaint = (e) => {
+    const handleNewComplaint = async (e) => {
         e.preventDefault();
-        const newComplaint = {
-            id: `C-${Math.floor(Math.random() * 900) + 100}`,
+        setIsSubmitting(true);
+
+        const newComplaintData = {
             category: e.target.category.value,
             description: e.target.description.value,
-            status: 'Pending',
-            date: new Date().toISOString().split('T')[0],
+            userId: user._id, 
         };
-        setComplaints([newComplaint, ...complaints]);
-        setShowForm(false);
+        
+        try {
+            const submittedComplaint = await submitComplaint(newComplaintData); 
+            setComplaints([submittedComplaint, ...complaints]);
+            setShowForm(false);
+            e.target.reset();
+            alert('Complaint submitted successfully!');
+        } catch (error) {
+            alert('Failed to submit complaint. See console for details.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <div className="max-w-6xl mx-auto">
+            {/* 🚩 FIX: Ensure the header and the button are present */}
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Complaint Management</h1>
                 <button onClick={() => setShowForm(!showForm)} className="px-5 py-2.5 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900 transform hover:scale-105 transition-transform duration-200">
@@ -527,98 +990,186 @@ const ComplaintPage = () => {
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                             <textarea id="description" name="description" rows="4" required className="mt-1 block w-full p-3 bg-gray-100 dark:bg-gray-700 border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Please describe the issue in detail..."></textarea>
                         </div>
-                        <div>
-                            <label htmlFor="image" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Upload Image (Optional)</label>
-                            <input type="file" id="image" name="image" className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/50 dark:file:text-indigo-300 dark:hover:file:bg-indigo-900"/>
-                        </div>
+                        {/* The image upload fields are correctly omitted here */}
+                        
                         <div className="text-right">
-                            <button type="submit" className="px-6 py-3 font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800">Submit Complaint</button>
+                            <button type="submit" disabled={isSubmitting} className="px-6 py-3 font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 disabled:opacity-50">
+                                {isSubmitting ? <Loader className="animate-spin h-5 w-5 mx-auto"/> : 'Submit Complaint'}
+                            </button>
                         </div>
                     </form>
                 </div>
             )}
 
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {complaints.map(c => (
-                            <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{c.id}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{c.category}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{c.date}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(c.status)}`}>
-                                        {c.status}
-                                    </span>
-                                </td>
+                {isLoading ? (
+                    <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                        <Loader className="animate-spin h-6 w-6 mx-auto mb-2"/> Loading complaints...
+                    </div>
+                ) : complaints.length === 0 ? (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">No complaints found for your user ID.</p>
+                ) : (
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {complaints.map(c => (
+                                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{c.id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{c.category}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{c.date}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(c.status)}`}>
+                                            {c.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );
 };
+const trackLaundryByToken = async (token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/laundry/track/${token}`);
+
+        if (response.status === 404) {
+             return { status: 'Not Found', details: 'No laundry found with this token number.' };
+        }
+        if (!response.ok) {
+            throw new Error('Server error during tracking.');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error tracking laundry:', error);
+        return { status: 'Error', details: 'Could not connect to service.' };
+    }
+};
+const submitLaundryBooking = async (bookingData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/laundry`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.msg || 'Booking failed.');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API Laundry Booking Error:', error);
+        throw error;
+    }
+};
 
 const LaundryPage = () => {
-    const [bookedSlot, setBookedSlot] = useState(null);
-    const [token, setToken] = useState(null);
+    const { user } = useContext(AppContext);
+    // State to store the *saved* booking details from DB
+    const [bookedSlotDetails, setBookedSlotDetails] = useState(null); 
+    
     const [laundryTokenInput, setLaundryTokenInput] = useState('');
     const [laundryStatus, setLaundryStatus] = useState(null);
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
-    const handleBooking = (slot) => {
-        setBookedSlot(slot);
-        setToken(`LDRY-${Math.floor(1000 + Math.random() * 9000)}`);
+    // Helper to generate a unique token
+    const generateToken = () => `TKN${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const handleBooking = async (slot) => {
+        if (!user || !user._id) {
+            alert("Please log in to book a slot.");
+            return;
+        }
+
+        const token = generateToken();
+        const bookingData = {
+            userId: user._id,
+            tokenNumber: token,
+            slotTime: slot,
+            status: 'Pending',
+        };
+
+        try {
+            const savedBooking = await submitLaundryBooking(bookingData);
+            
+            setBookedSlotDetails({
+                token: savedBooking.tokenNumber,
+                slot: savedBooking.slotTime,
+                date: new Date(savedBooking.date).toLocaleDateString(),
+            });
+
+            alert(`Booking confirmed! Token: ${savedBooking.tokenNumber}`);
+        } catch (error) {
+            // 🚩 MODIFIED ALERT to display the specific error message from the backend
+            alert(`Booking Failed: ${error.message}`); 
+        }
     };
 
-    const handleTrackLaundry = (e) => {
+    const handleTrackLaundry = async (e) => {
         e.preventDefault();
+        
+        if (!laundryTokenInput) return;
+        
         setIsLoadingStatus(true);
         setLaundryStatus(null);
-        setTimeout(() => {
-            const status = MOCK_LAUNDRY_STATUS[laundryTokenInput.toUpperCase()];
-            setLaundryStatus(status || { status: 'Not Found', details: 'No laundry found with this token number.' });
+        
+        try {
+            const statusData = await trackLaundryByToken(laundryTokenInput);
+            setLaundryStatus(statusData);
+        } catch (error) {
+            setLaundryStatus({ status: 'Error', details: 'Failed to reach tracking service.' });
+        } finally {
             setIsLoadingStatus(false);
-        }, 1000);
+        }
     };
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Laundry Services</h1>
+            
+            {/* --- Track Your Laundry Section --- */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Track Your Laundry</h2>
                 <form onSubmit={handleTrackLaundry} className="flex items-center space-x-3">
                     <input type="text" value={laundryTokenInput} onChange={(e) => setLaundryTokenInput(e.target.value)} placeholder="Enter Token Number (e.g., TKN101)" className="w-full p-3 bg-gray-100 dark:bg-gray-700 border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                     <button type="submit" className="px-6 py-3 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" disabled={isLoadingStatus}>
-                        {isLoadingStatus ? <Loader className="animate-spin" /> : 'Track'}
+                        {isLoadingStatus ? <Loader className="animate-spin" size={20} /> : 'Track'}
                     </button>
                 </form>
                 {laundryStatus && (
-                    <div className={`mt-6 p-4 rounded-lg ${laundryStatus.status === 'Not Found' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'}`}>
+                    <div className={`mt-6 p-4 rounded-lg ${
+                        laundryStatus.status === 'Ready for Pickup' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 
+                        laundryStatus.status === 'Pending' || laundryStatus.status === 'In Progress' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
+                        'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+                    }`}>
                         <p className="font-bold">Status: {laundryStatus.status}</p>
                         <p>{laundryStatus.details}</p>
                     </div>
                 )}
             </div>
 
+            {/* --- Book a Laundry Slot Section --- */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Book a Laundry Slot</h2>
-                {bookedSlot ? (
+                {bookedSlotDetails ? (
                     <div className="bg-green-100 dark:bg-green-900/50 border-l-4 border-green-500 text-green-700 dark:text-green-300 p-6 rounded-2xl text-center">
                         <h3 className="text-2xl font-bold">Booking Confirmed!</h3>
-                        <p className="mt-2 text-lg">Your slot is booked for <span className="font-bold">{bookedSlot}</span>.</p>
+                        <p className="mt-2 text-lg">Your slot is booked for <span className="font-bold">{bookedSlotDetails.slot}</span> on {bookedSlotDetails.date}.</p>
                         <p className="mt-4 text-xl font-bold">Your Token Number is:</p>
-                        <p className="text-4xl font-mono font-extrabold tracking-widest mt-2">{token}</p>
-                        <button onClick={() => { setBookedSlot(null); setToken(null); }} className="mt-6 px-6 py-2 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700">Cancel Booking</button>
+                        <p className="text-4xl font-mono font-extrabold tracking-widest mt-2">{bookedSlotDetails.token}</p>
+                        <button onClick={() => setBookedSlotDetails(null)} className="mt-6 px-6 py-2 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700">Clear Details</button>
                     </div>
                 ) : (
                     <>
@@ -638,7 +1189,7 @@ const LaundryPage = () => {
 };
 
 const MessPage = () => {
-    const { messCrowd, setMessCrowd } = useContext(AppContext);
+    const { messCrowd, setMessCrowd, user } = useContext(AppContext);
     const [day] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase());
     const [rating, setRating] = useState(0);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
@@ -652,18 +1203,36 @@ const MessPage = () => {
       saturday: { breakfast: 'Puri, Aloo Masala', lunch: 'Special Meal', dinner: 'Chapathi, Chana Masala' },
       sunday: { breakfast: 'Aloo Paratha, Curd', lunch: 'Non-Veg Special/Paneer', dinner: 'Idiyappam, Coconut Milk' },
     };
+    
 
     const handleCheckIn = (messId) => {
         setMessCrowd(prev => {
-            const otherMessId = messId === 'ras_sense' ? 'fusion' : 'ras_sense';
             const newCrowd = { ...prev };
+            
+            // Identify the ID of the other mess
+            const otherMessId = messId === 'ras_sense' ? 'fusion' : 'ras_sense';
 
+            // 🚩 FIX: Check out of the *other* mess if the user is currently checked in there
             if (newCrowd[otherMessId].userCheckedIn) {
-                newCrowd[otherMessId] = { ...newCrowd[otherMessId], current: Math.max(0, newCrowd[otherMessId].current - 1), userCheckedIn: false };
+                newCrowd[otherMessId] = { 
+                    ...newCrowd[otherMessId], 
+                    current: Math.max(0, newCrowd[otherMessId].current - 1), 
+                    userCheckedIn: false 
+                };
+                console.log(`Checked user out of ${newCrowd[otherMessId].name}.`);
             }
 
-            newCrowd[messId] = { ...newCrowd[messId], current: newCrowd[messId].current + 1, userCheckedIn: true };
-            
+            // Check the user into the selected mess
+            // This condition is important: only increment if they weren't already checked into this one.
+            if (!newCrowd[messId].userCheckedIn) {
+                newCrowd[messId] = { 
+                    ...newCrowd[messId], 
+                    current: newCrowd[messId].current + 1, 
+                    userCheckedIn: true 
+                };
+                console.log(`Checked user into ${newCrowd[messId].name}.`);
+            }
+
             return newCrowd;
         });
     };
@@ -675,11 +1244,52 @@ const MessPage = () => {
         }));
     };
 
-    const handleFeedbackSubmit = (e) => {
+    const handleFeedbackSubmit = async (e) => { // 🚩 Made async
         e.preventDefault();
-        setFeedbackSubmitted(true);
-        setTimeout(() => setFeedbackSubmitted(false), 3000);
+        
+        if (rating === 0) {
+            alert("Please provide a star rating.");
+            return;
+        }
+        
+
+        if (!user || !user._id) {
+             alert("User data missing. Cannot submit feedback.");
+             return;
+        }
+        
+        const comments = e.target.comments.value;
+
+        const feedbackPayload = {
+            userId: user._id,
+            mealType: 'Feedback', // Match the type used in the backend
+            rating: rating,
+            feedback: comments // Text comment
+        };
+
+        try {
+            // 🚩 NEW API CALL: Submit the structured feedback
+            const response = await fetch(`${API_BASE_URL}/mess`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(feedbackPayload),
+            });
+            
+            if (!response.ok) {
+                throw new Error("Server rejected feedback submission.");
+            }
+
+            setFeedbackSubmitted(true);
+            setRating(0); // Reset rating
+            e.target.comments.value = ''; // Clear comments
+
+            setTimeout(() => setFeedbackSubmitted(false), 3000);
+        } catch (error) {
+            alert(`Failed to submit feedback: ${error.message}`);
+        }
     };
+
+    
 
     const CrowdCard = ({ mess }) => {
         const percentage = Math.min(100, (mess.current / mess.max) * 100);
@@ -773,8 +1383,55 @@ const MessPage = () => {
 
 const SportsPage = () => {
     const [activeTab, setActiveTab] = useState('availability');
-    const { sportsAvailability, setSportsAvailability } = useContext(AppContext);
-    const [registrations, setRegistrations] = useState(MOCK_EVENT_REGISTRATIONS);
+    // Destructure the setter for sportsEvents
+    const { sportsAvailability, setSportsAvailability, sportsEvents, user, setSportsEvents } = useContext(AppContext);
+    
+    // Helper to determine if the current user is registered for an event
+    const isUserRegistered = (event) => {
+        if (!user || !user._id) return false;
+        // Check if the user ID exists in the registeredUsers array (by matching _id)
+        return event.registeredUsers.some(regUser => regUser._id === user._id);
+    };
+
+    // UNIFIED FUNCTION: Handles event registration via API
+    const handleEventRegistration = async (eventToRegister) => {
+        if (!user || !user._id) {
+            alert("Please log in to register for an event.");
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/sports`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: eventToRegister.id,
+                    userId: user._id
+                }),
+            });
+            
+            if (!response.ok) {
+                 const errorData = await response.json();
+                 if (response.status === 409) {
+                     throw new Error(errorData.msg);
+                 }
+                 throw new Error(errorData.msg || "Failed to register for event.");
+            }
+            
+            // Get the fully updated event data from the server response
+            const updatedEvent = await response.json();
+            
+            // FIX: Update the local state (sportsEvents) immutably to show the new count instantly
+            setSportsEvents(prevEvents => prevEvents.map(event => 
+                event.id === eventToRegister.id ? updatedEvent : event
+            ));
+
+            alert(`Successfully registered for ${updatedEvent.game}!`);
+            
+        } catch (error) {
+            alert(`Registration Error: ${error.message}`);
+        }
+    };
 
     const handleCheckIn = (venueId) => {
         setSportsAvailability(prev => {
@@ -800,9 +1457,6 @@ const SportsPage = () => {
         ));
     };
     
-    const handleRegister = (id) => {
-        setRegistrations(registrations.map(s => s.id === id ? { ...s, registered: true } : s));
-    };
     
     const VenueCard = ({ venue }) => {
         const percentage = venue.max > 0 ? Math.min(100, (venue.current / venue.max) * 100) : 0;
@@ -863,30 +1517,84 @@ const SportsPage = () => {
 
             {activeTab === 'registrations' && (
                  <div className="space-y-6">
-                    {registrations.map(sport => (
-                        <div key={sport.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center transition-all duration-300 hover:shadow-xl hover:scale-105">
-                            <div className="mb-4 sm:mb-0">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{sport.name}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {sport.date} at {sport.time} | Venue: {sport.venue}
-                                </p>
+                    {sportsEvents.length === 0 ? (
+                         <p className="text-center text-gray-500 dark:text-gray-400 py-8">No current events available.</p>
+                    ) : (
+                        sportsEvents.map(sport => (
+                            <div key={sport.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center transition-all duration-300 hover:shadow-xl hover:scale-105">
+                                <div className="mb-4 sm:mb-0">
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{sport.name}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        {sport.date} at {sport.time} | Venue: {sport.venue}
+                                    </p>
+                                    {/* 🚩 NEW: Display Registered Users List */}
+                                    {sport.registeredUsers.length > 0 && (
+                                        <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+                                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Participants:</p>
+                                            <ul className="text-xs space-y-0.5">
+                                                {sport.registeredUsers.map((u, index) => (
+                                                    <li key={index} className="text-gray-600 dark:text-gray-400">
+                                                        - {u.name} ({u.regNo})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                                {isUserRegistered(sport) ? (
+                                    <span className="px-4 py-2 text-sm font-semibold text-green-800 bg-green-200 dark:text-green-200 dark:bg-green-800/50 rounded-full flex items-center space-x-2"><CheckCircle size={16}/><span>Registered</span></span>
+                                ) : (
+                                    <button onClick={() => handleEventRegistration(sport)} className="px-5 py-2.5 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Register</button>
+                                )}
                             </div>
-                            {sport.registered ? (
-                                <span className="px-4 py-2 text-sm font-semibold text-green-800 bg-green-200 dark:text-green-200 dark:bg-green-800/50 rounded-full flex items-center space-x-2"><CheckCircle size={16}/><span>Registered</span></span>
-                            ) : (
-                                <button onClick={() => handleRegister(sport.id)} className="px-5 py-2.5 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Register</button>
-                            )}
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             )}
         </div>
     );
 };
+// --- API FETCH FUNCTIONS (In App.js) ---
 
+// 🚩 NEW FUNCTION: Fetch sports events with populated user data
+const fetchSportsEvents = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/sports`);
+        if (!response.ok) throw new Error('Failed to fetch sports events');
+        
+        const data = await response.json();
+        
+        // Map the data to a cleaner format, similar to the mock structure
+        return data.map(e => ({
+            id: e._id,
+            name: e.game,
+            date: e.date,
+            time: e.time,
+            venue: e.venue,
+            // Keep the populated array of user objects
+            registeredUsers: e.registeredUsers || [], 
+            registered: false, // This will be set by the component logic
+        })).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    } catch (error) {
+        console.error('Error fetching sports events:', error);
+        return [];
+    }
+};
 const VMartPage = () => {
-    const [openCategory, setOpenCategory] = useState(INITIAL_VMART_STOCK.length > 0 ? INITIAL_VMART_STOCK[0].category : null);
-    const { addNotification } = useContext(AppContext);
+    // MODIFIED: Get vmartStock from context
+    const { vmartStock, addNotification } = useContext(AppContext);
+    
+    // 🚩 FIX: Define the state variables for the accordion logic (openCategory and setOpenCategory)
+    // Initialize state to the first category if stock is available
+    const [openCategory, setOpenCategory] = useState(vmartStock.length > 0 ? vmartStock[0].category : null);
+    
+    // Update openCategory whenever vmartStock changes, if it was null
+    useEffect(() => {
+        if (openCategory === null && vmartStock.length > 0) {
+            setOpenCategory(vmartStock[0].category);
+        }
+    }, [vmartStock, openCategory]);
 
     const handleNotify = (itemName) => {
         addNotification({
@@ -900,71 +1608,145 @@ const VMartPage = () => {
         <div className="max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">V-Mart Stock</h1>
             <div className="space-y-4">
-                {INITIAL_VMART_STOCK.map(category => (
-                    <div key={category.category} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-                        <button onClick={() => setOpenCategory(openCategory === category.category ? null : category.category)} className="w-full flex justify-between items-center p-5 text-left">
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-white">{category.category}</h2>
-                            <ChevronDown className={`transition-transform duration-300 ${openCategory === category.category ? 'rotate-180' : ''}`} />
-                        </button>
-                        {openCategory === category.category && (
-                            <div className="px-5 pb-5">
-                                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                                    {category.items.map(item => (
-                                        <li key={item.id} className="py-3 flex justify-between items-center">
-                                            <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
-                                            {item.count > 0 ? (
-                                                <span className="px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-800/50 rounded-full">{item.count} in stock</span>
-                                            ) : (
-                                                <div className="flex items-center space-x-3">
-                                                    <span className="px-3 py-1 text-sm font-semibold text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-800/50 rounded-full">Out of Stock</span>
-                                                    <button onClick={() => handleNotify(item.name)} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Notify Me</button>
-                                                </div>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                {vmartStock.length === 0 ? (
+                    <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                        <Loader className="animate-spin h-6 w-6 mx-auto mb-2"/> Loading V-Mart Stock...
                     </div>
-                ))}
+                ) : (
+                    vmartStock.map(category => (
+                        <div key={category.category} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                            {/* 🚩 Usage of setOpenCategory and openCategory are now valid */}
+                            <button onClick={() => setOpenCategory(openCategory === category.category ? null : category.category)} className="w-full flex justify-between items-center p-5 text-left">
+                                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{category.category}</h2>
+                                <ChevronDown className={`transition-transform duration-300 ${openCategory === category.category ? 'rotate-180' : ''}`} />
+                            </button>
+                            {openCategory === category.category && (
+                                <div className="px-5 pb-5">
+                                    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        {category.items.map(item => (
+                                            <li key={item.id} className="py-3 flex justify-between items-center">
+                                                <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
+                                                {item.count > 0 ? (
+                                                    <span className="px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-800/50 rounded-full">{item.count} in stock</span>
+                                                ) : (
+                                                    <div className="flex items-center space-x-3">
+                                                        <span className="px-3 py-1 text-sm font-semibold text-red-800 bg-red-100 dark:text-red-200 dark:bg-red-800/50 rounded-full">Out of Stock</span>
+                                                        <button onClick={() => handleNotify(item.name)} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Notify Me</button>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+};
+const AnnouncementsPage = () => {
+    const { announcements } = useContext(AppContext);
+    
+    return (
+        <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Announcements & Events</h1>
+            <div className="space-y-6">
+                {announcements.length === 0 ? (
+                     <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                        <Loader className="animate-spin h-6 w-6 mx-auto mb-2"/> Loading announcements...
+                    </div>
+                ) : (
+                    announcements.map(ann => (
+                        <div key={ann.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{ann.title}</h2>
+                            
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Posted on: **{ann.date}**
+                            </p>
+                            
+                            {/* 🚩 NEW: Display Description */}
+                            <p className="text-gray-700 dark:text-gray-300 mb-4">{ann.description}</p>
+
+                            {/* 🚩 NEW: Display Time, Venue, and Organizer */}
+                            <div className="grid grid-cols-2 gap-y-2 text-sm">
+                                <p className="text-gray-600 dark:text-gray-400">
+                                    <span className="font-semibold text-gray-800 dark:text-white">Time:</span> {ann.time}
+                                </p>
+                                <p className="text-gray-600 dark:text-gray-400">
+                                    <span className="font-semibold text-gray-800 dark:text-white">Venue:</span> {ann.venue}
+                                </p>
+                                <p className="col-span-2 text-gray-600 dark:text-gray-400">
+                                    <span className="font-semibold text-gray-800 dark:text-white">Organizer:</span> {ann.organizer}
+                                </p>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
 };
 
-const AnnouncementsPage = () => {
-    return (
-        <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Announcements</h1>
-            <div className="space-y-6">
-                {MOCK_ANNOUNCEMENTS.map(ann => (
-                    <div key={ann.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{ann.title}</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">Posted on: {ann.date}</p>
-                        <div className="text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: ann.body }}></div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+// 🚩 NEW FUNCTION: Fetch grouped Vmart stock data
+const fetchVmartStock = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/vmart`);
+        if (!response.ok) throw new Error('Failed to fetch Vmart stock');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching V-Mart stock:', error);
+        return []; // Return an empty array on failure
+    }
 };
 
 const EmergencyModal = ({ isOpen, onClose }) => {
-    const { setIsAlertActive } = useContext(AppContext);
+    const { setIsAlertActive, user } = useContext(AppContext);
     const [confirmed, setConfirmed] = useState(false);
     const [alertSent, setAlertSent] = useState(false);
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        if (!user || !user._id) {
+            alert("Error: User information is missing. Cannot send alert.");
+            return;
+        }
+
         setConfirmed(true);
-        setTimeout(() => {
+
+        try {
+            // 🚩 NEW API CALL TO THE BACKEND
+            const response = await fetch(`${API_BASE_URL}/emergencies`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user._id }), // Send only the user ID
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.msg || 'Server failed to record alert.');
+            }
+
+            // Success animation/state change
             setAlertSent(true);
-            setIsAlertActive(true);
+            setIsAlertActive(true); // Activate the dashboard banner
+
+            setTimeout(() => {
+                setIsAlertActive(false); // Deactivate the alert banner
+                console.log("Emergency alert banner deactivated after 10 seconds.");
+            }, 10000);
+            
+            // Auto-close modal after confirmation
             setTimeout(() => {
                 onClose();
                 setConfirmed(false);
                 setAlertSent(false);
             }, 2000);
-        }, 1500);
+
+        } catch (error) {
+            alert(`Emergency Alert Failed: ${error.message}`);
+            setConfirmed(false); // Allow retrying
+        }
     };
 
     if (!isOpen) return null;
